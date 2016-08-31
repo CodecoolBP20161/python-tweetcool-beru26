@@ -1,5 +1,9 @@
 import argparse
 import ipaddress
+import requests
+import getpass
+import json
+import time
 
 
 parser = argparse.ArgumentParser()
@@ -28,3 +32,23 @@ if not(1024 < server["port"] < 65535):
 server["address"] = 'http://' + server["host"].compressed + ':' + str(server["port"])
 
 # Logic starts here... somewhere..
+
+
+message = None
+while message != 'q':
+    r = requests.get(server['address'] + '/tweet')
+    for tweet in r.json():
+        print('''%s: %s''' % (tweet['poster'], tweet['content']))
+        print('At:', time.strftime("%D %H:%M", time.localtime(int(tweet['timestamp']))) + '\n')
+    try:
+        message = input('Enter a cool message to post:("!refresh" or "exit"):')
+    except EOFError:
+        print('/n')
+        raise SystemExit
+
+    if message == '!refresh':
+        continue
+    r = requests.post(server['address'] + '/tweet', data=json.dumps({
+        "content": message,
+        "poster": getpass.getuser()
+    }))
